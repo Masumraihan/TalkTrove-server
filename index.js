@@ -30,16 +30,38 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     //await client.connect();
 
-    const classCollection = client.db("TalkTrovesDB").collection("classCollection");
+    const classCollection = client
+      .db("TalkTrovesDB")
+      .collection("classCollection");
+    const userCollection = client
+      .db("TalkTrovesDB")
+      .collection("usersCollection");
 
-    app.get("/classes", async (req, res) => {
-      const result = await classCollection.find().sort({students:-1}).limit(6).toArray();
+    //users apis
+    app.put("/users/:email", async (req, res) => {
+      const { email } = req.params;
+      console.log(email);
+      const user = req.body;
+      console.log(user);
+      const query = { email: email };
+      const options = { upsert: true }
+      const updatedDoc = {
+        $set: user,
+      };
+      const result = await userCollection.updateOne(query, updatedDoc, options);
       res.send(result);
     });
 
-    app.get("/instructors", async(req,res) => {
-      
-    })
+    app.get("/classes", async (req, res) => {
+      const result = await classCollection
+        .find()
+        .sort({ students: -1 })
+        .limit(6)
+        .toArray();
+      res.send(result);
+    });
+
+    app.get("/instructors", async (req, res) => {});
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
