@@ -36,13 +36,14 @@ async function run() {
     const userCollection = client
       .db("TalkTrovesDB")
       .collection("usersCollection");
+    const studentFeedbackCollection = client
+      .db("TalkTrovesDB")
+      .collection("studentsFeedbackCollection");
 
     //users apis
     app.put("/users/:email", async (req, res) => {
       const { email } = req.params;
-      console.log(email);
       const user = req.body;
-      console.log(user);
       const query = { email: email };
       const options = { upsert: true };
       const updatedDoc = {
@@ -60,6 +61,12 @@ async function run() {
         .toArray();
       res.send(result);
     });
+    app.get("/allClasses", async (req, res) => {
+      const result = await classCollection
+        .find()
+        .toArray();
+      res.send(result);
+    });
 
     app.get("/instructors", async (req, res) => {
       const query = { role: "instructor" };
@@ -70,6 +77,18 @@ async function run() {
         .toArray();
       res.send(result);
     });
+    app.get("/allInstructors", async (req, res) => {
+      const query = { role: "instructor" };
+      const result = await userCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/studentFeedback", async (req, res) => {
+      const result = await studentFeedbackCollection.find().toArray();
+      res.send(result);
+    });
+
+    // users api
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
