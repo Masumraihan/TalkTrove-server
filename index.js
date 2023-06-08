@@ -72,20 +72,37 @@ async function run() {
     const studentFeedbackCollection = client
       .db("TalkTrovesDB")
       .collection("studentsFeedbackCollection");
+    const selectedClassCollection = client
+      .db("TalkTrovesDB")
+      .collection("selectedClassCollection");
 
     //users apis
     app.put("/users/:email", async (req, res) => {
       const { email } = req.params;
-      const user = req.body;
+      const newUser = req.body;
       const query = { email: email };
+
+      const user = await userCollection.findOne(query);
+      if (!user) {
+        newUser.role = "student";
+      }
+
       const options = { upsert: true };
       const updatedDoc = {
-        $set: user,
+        $set: newUser,
       };
       const result = await userCollection.updateOne(query, updatedDoc, options);
       res.send(result);
     });
 
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params;
+      const query = email;
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
+
+    // classes api
     app.get("/classes", async (req, res) => {
       const result = await classCollection
         .find()
@@ -99,6 +116,13 @@ async function run() {
       res.send(result);
     });
 
+    app.post("/classes", verifyJWT, async (req, res) => {
+      const info = req.body;
+      const result = await selectedClassCollection.insertOne(info);
+      res.send(result);
+    });
+
+    // instructors api
     app.get("/instructors", async (req, res) => {
       const query = { role: "instructor" };
       const result = await userCollection
@@ -119,13 +143,6 @@ async function run() {
       res.send(result);
     });
 
-    // users api
-    app.get("/users/:email", async (req, res) => {
-      const email = req.params;
-      const query = email;
-      const result = await userCollection.findOne(query);
-      res.send(result);
-    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
