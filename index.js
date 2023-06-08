@@ -44,7 +44,7 @@ async function run() {
       const user = req.body;
       console.log(user);
       const query = { email: email };
-      const options = { upsert: true }
+      const options = { upsert: true };
       const updatedDoc = {
         $set: user,
       };
@@ -61,7 +61,15 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/instructors", async (req, res) => {});
+    app.get("/instructors", async (req, res) => {
+      const query = { role: "instructor" };
+      const result = await userCollection
+        .find(query)
+        .sort({ students: -1 })
+        .limit(6)
+        .toArray();
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
