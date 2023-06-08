@@ -1,6 +1,7 @@
 const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const { MongoClient, ServerApiVersion } = require("mongodb");
 const port = process.env.PORT || 5000;
 
@@ -9,6 +10,30 @@ const app = express();
 // middleware
 app.use(cors());
 app.use(express.json());
+
+const verifyJWT = (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (!authorization) {
+    return res
+      .status(401)
+      .send({ error: true, message: "unauthorized access" });
+  }
+  const token = authorization.split(" ")[1];
+  if (!token) {
+    return res
+      .status(401)
+      .send({ error: true, message: "unauthorized access" });
+  }
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+    if (err) {
+      return res
+        .status(401)
+        .send({ error: true, message: "unauthorized access" });
+    }
+    req.decoded = decoded;
+    next();
+  });
+};
 
 app.get("/", (req, res) => {
   res.send("TalkTrove server is running");
@@ -29,6 +54,14 @@ async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
     //await client.connect();
+
+    app.post("/jwt", (req, res) => {
+      const email = req.body;
+      const token = jwt.sign(email, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "1h",
+      });
+      res.send(token);
+    });
 
     const classCollection = client
       .db("TalkTrovesDB")
@@ -62,9 +95,7 @@ async function run() {
       res.send(result);
     });
     app.get("/allClasses", async (req, res) => {
-      const result = await classCollection
-        .find()
-        .toArray();
+      const result = await classCollection.find().toArray();
       res.send(result);
     });
 
@@ -89,7 +120,12 @@ async function run() {
     });
 
     // users api
-
+    app.get("/users/:email", async (req, res) => {
+      const email = req.params;
+      const query = email;
+      const result = await userCollection.findOne(query);
+      res.send(result);
+    });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
