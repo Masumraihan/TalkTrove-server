@@ -76,8 +76,20 @@ async function run() {
       .db("TalkTrovesDB")
       .collection("selectedClassCollection");
 
-    // instructor api
+    // admin api
+    const verifyAdmin = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      if (user?.role !== "admin") {
+        return res
+          .status(401)
+          .send({ error: true, message: "forbidden access" });
+      }
+      next();
+    };
 
+    // instructor api
     const verifyInstructor = async (req, res, next) => {
       const email = req.decoded.email;
       const query = { email: email };
@@ -100,6 +112,20 @@ async function run() {
       const result = { instructor: user.role === "instructor" };
       res.send(result);
     });
+
+    app.get(
+      "/classes/instructor/:email",
+      verifyJWT,
+      verifyInstructor,
+      async (req, res) => {
+        const email = req.params;
+        //console.log(email);
+        const query = email;
+        const result = await classCollection.find(query).toArray();
+        res.send(result);
+      }
+    );
+
     // instructor class posts
     app.post(
       "/classes/instructor",
@@ -107,7 +133,8 @@ async function run() {
       verifyInstructor,
       async (req, res) => {
         const classInfo = req.body;
-        console.log(classInfo);
+        const result = await classCollection.insertOne(classInfo);
+        res.send(result);
       }
     );
 
@@ -139,15 +166,17 @@ async function run() {
 
     // classes api
     app.get("/classes", async (req, res) => {
+      const query = { status: "approved" };
       const result = await classCollection
-        .find()
+        .find(query)
         .sort({ students: -1 })
         .limit(6)
         .toArray();
       res.send(result);
     });
     app.get("/allClasses", async (req, res) => {
-      const result = await classCollection.find().toArray();
+      const query = { status: "approved" };
+      const result = await classCollection.find(query).toArray();
       res.send(result);
     });
 
