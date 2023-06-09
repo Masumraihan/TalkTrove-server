@@ -122,6 +122,13 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/classes/:email",verifyJWT, async(req,res) => {
+      const email = req.params;
+      const query = email;
+      const result = await selectedClassCollection.find(query).toArray()
+      res.send(result)
+    })
+
     // instructors api
     app.get("/instructors", async (req, res) => {
       const query = { role: "instructor" };
