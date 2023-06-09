@@ -35,16 +35,6 @@ const verifyJWT = (req, res, next) => {
   });
 };
 
-const verifyInstructor = (req, res, next) => {
-  const email = req.decoded.email;
-  const query = { email: email };
-  const user = userCollection.findOne(query);
-  if (user?.role !== "instructor") {
-    return res.status(401).send({ error: true, message: "forbidden access" });
-  }
-  next();
-};
-
 app.get("/", (req, res) => {
   res.send("TalkTrove server is running");
 });
@@ -86,7 +76,20 @@ async function run() {
       .db("TalkTrovesDB")
       .collection("selectedClassCollection");
 
-      // instructor api
+    // instructor api
+
+    const verifyInstructor = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      if (user?.role !== "instructor") {
+        return res
+          .status(401)
+          .send({ error: true, message: "forbidden access" });
+      }
+      next();
+    };
+
     app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
       const { email } = req.params;
       if (req.decoded.email !== email) {
@@ -97,6 +100,16 @@ async function run() {
       const result = { instructor: user.role === "instructor" };
       res.send(result);
     });
+    // instructor class posts
+    app.post(
+      "/classes/instructor",
+      verifyJWT,
+      verifyInstructor,
+      async (req, res) => {
+        const classInfo = req.body;
+        console.log(classInfo);
+      }
+    );
 
     //users apis
     app.put("/users/:email", async (req, res) => {
