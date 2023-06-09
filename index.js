@@ -2,7 +2,7 @@ const express = require("express");
 require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -33,6 +33,16 @@ const verifyJWT = (req, res, next) => {
     req.decoded = decoded;
     next();
   });
+};
+
+const verifyInstructor = (req, res, next) => {
+  const email = req.decoded.email;
+  const query = { email: email };
+  const user = userCollection.findOne(query);
+  if (user?.role !== "instructor") {
+    return res.status(401).send({ error: true, message: "forbidden access" });
+  }
+  next();
 };
 
 app.get("/", (req, res) => {
@@ -76,6 +86,18 @@ async function run() {
       .db("TalkTrovesDB")
       .collection("selectedClassCollection");
 
+      // instructor api
+    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
+      const { email } = req.params;
+      if (req.decoded.email !== email) {
+        res.send({ instructor: false });
+      }
+      const query = { email: email };
+      const user = await userCollection.findOne(query);
+      const result = { instructor: user.role === "instructor" };
+      res.send(result);
+    });
+
     //users apis
     app.put("/users/:email", async (req, res) => {
       const { email } = req.params;
@@ -116,18 +138,26 @@ async function run() {
       res.send(result);
     });
 
+    app.get("/classes/:email", verifyJWT, async (req, res) => {
+      const email = req.params;
+      const query = email;
+      const result = await selectedClassCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    app.get("/singleClasses/:id", async (req, res) => {
+      const { id } = req.params;
+
+      const query = { classId: id };
+      const result = await selectedClassCollection.find(query).toArray();
+      res.send(result);
+    });
+
     app.post("/classes", verifyJWT, async (req, res) => {
       const info = req.body;
       const result = await selectedClassCollection.insertOne(info);
       res.send(result);
     });
-
-    app.get("/classes/:email",verifyJWT, async(req,res) => {
-      const email = req.params;
-      const query = email;
-      const result = await selectedClassCollection.find(query).toArray()
-      res.send(result)
-    })
 
     // instructors api
     app.get("/instructors", async (req, res) => {
