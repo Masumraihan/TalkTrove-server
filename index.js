@@ -149,7 +149,7 @@ async function run() {
       }
     );
 
-    // get add classes my one instructor
+    // get instructor add classes for my classes page : instructor
     app.get(
       "/classes/instructor/:email",
       verifyJWT,
@@ -162,7 +162,7 @@ async function run() {
       }
     );
 
-    // instructor class posts
+    // instructor class posts : instructor
     app.post(
       "/classes/instructor",
       verifyJWT,
@@ -179,7 +179,7 @@ async function run() {
       res.send(result);
     });
 
-    //users apis
+    //get users
     app.get("/users/:email", async (req, res) => {
       const email = req.params;
       const query = email;
@@ -223,7 +223,7 @@ async function run() {
       res.send(result);
     });
 
-    // classes api
+    // classes for home page
     app.get("/classes", async (req, res) => {
       const query = { status: "approved" };
       const result = await classCollection
@@ -234,12 +234,14 @@ async function run() {
       res.send(result);
     });
 
+    // get all approved classes
     app.get("/allClasses", async (req, res) => {
       const query = { status: "approved" };
       const result = await classCollection.find(query).toArray();
       res.send(result);
     });
 
+    // get user specific classes : students
     app.get("/classes/:email", verifyJWT, async (req, res) => {
       const email = req.params;
       const query = email;
@@ -247,13 +249,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/singleClasses/:id", async (req, res) => {
-      const { id } = req.params;
-      const query = { classId: id };
-      const result = await selectedClassCollection.find(query).toArray();
-      res.send(result);
-    });
-
+    // select classes : students
     app.post("/classes", verifyJWT, async (req, res) => {
       const info = req.body;
       const result = await selectedClassCollection.insertOne(info);
@@ -277,12 +273,12 @@ async function run() {
       res.send(result);
     });
 
-    // confirm payment to enrolled
+    // confirm payment to enrolled : students
     app.post("/enroll/:id", verifyJWT, async (req, res) => {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
       const info = req.body;
-     
+
       const result = await classCollection.updateOne(query, {
         $inc: { enrolledStudents: 1, seats: -1 },
       });
@@ -306,7 +302,7 @@ async function run() {
       res.send(result);
     });
 
-    // add feedback for admin
+    // add feedback for admin : admin
     app.patch(
       "/classes/admin/:id",
       verifyJWT,
@@ -323,11 +319,19 @@ async function run() {
       }
     );
 
-    // delete selected class
+    // delete selected class : student
     app.delete("/classes/:id", verifyJWT, async (req, res) => {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
       const result = await selectedClassCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    //get enrolled classes for specific students : students
+    app.get("/enrolledClasses/:email", verifyJWT, async (req, res) => {
+      const { email } = req.params;
+      const query = { email: email };
+      const result = await enrolledClassesCollection.find(query).toArray();
       res.send(result);
     });
 
