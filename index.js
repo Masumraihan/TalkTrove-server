@@ -76,9 +76,11 @@ async function run() {
     const selectedClassCollection = client
       .db("TalkTrovesDB")
       .collection("selectedClassCollection");
+    const enrolledClassesCollection = client
+      .db("TalkTrovesDB")
+      .collection("enrolledClassesCollection");
 
     // create payment intent
-
     app.post("/create-payment-intent", verifyJWT, async (req, res) => {
       const { price } = req.body;
       if (price) {
@@ -272,6 +274,23 @@ async function run() {
         },
       };
       const result = await classCollection.updateOne(filter, updatedClassInfo);
+      res.send(result);
+    });
+
+    // confirm payment to enrolled
+    app.post("/enroll/:id", verifyJWT, async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const info = req.body;
+     
+      const result = await classCollection.updateOne(query, {
+        $inc: { enrolledStudents: 1, seats: -1 },
+      });
+      if (result.modifiedCount > 0) {
+        await selectedClassCollection.deleteOne({ classId: id });
+        await enrolledClassesCollection.insertOne(info);
+      }
+
       res.send(result);
     });
 
