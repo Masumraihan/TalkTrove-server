@@ -236,7 +236,7 @@ async function run() {
       const query = { status: "approved" };
       const result = await classCollection
         .find(query)
-        .sort({ students: -1 })
+        .sort({ enrolledStudents: -1 })
         .limit(6)
         .toArray();
       res.send(result);
@@ -251,8 +251,8 @@ async function run() {
 
     // get user specific classes : students
     app.get("/classes/:email", verifyJWT, async (req, res) => {
-      const email = req.params;
-      const query = email;
+      const {email} = req.params;
+      const query = { userEmail: email };
       const result = await selectedClassCollection.find(query).toArray();
       res.send(result);
     });
@@ -286,13 +286,17 @@ async function run() {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
       const info = req.body;
-
+      console.log(info);
+      const filterInstructor = { email: info.email };
       const result = await classCollection.updateOne(query, {
         $inc: { enrolledStudents: 1, seats: -1 },
       });
       if (result.modifiedCount > 0) {
         await selectedClassCollection.deleteOne({ classId: id });
         await enrolledClassesCollection.insertOne(info);
+        await userCollection.updateOne(filterInstructor, {
+          $inc: { students: 1 },
+        });
       }
 
       res.send(result);
@@ -338,7 +342,7 @@ async function run() {
     //get enrolled classes for specific students : students
     app.get("/enrolledClasses/:email", verifyJWT, async (req, res) => {
       const { email } = req.params;
-      const query = { email: email };
+      const query = { userEmail: email };
       const result = await enrolledClassesCollection.find(query).toArray();
       res.send(result);
     });
@@ -346,7 +350,7 @@ async function run() {
     // payment history
     app.get("/paymentHistory/:email", verifyJWT, async (req, res) => {
       const { email } = req.params;
-      const query = { email: email };
+      const query = { userEmail: email };
       const result = await enrolledClassesCollection.find(query).toArray();
       res.send(result);
     });
