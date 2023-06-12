@@ -216,11 +216,19 @@ async function run() {
       const { id } = req.params;
       const filter = { _id: new ObjectId(id) };
       const { role } = req.body;
-      const updateInfo = {
-        $set: { role: role },
-      };
-      const result = await userCollection.updateOne(filter, updateInfo);
-      res.send(result);
+      if (role === "instructor") {
+        const updateInfo = {
+          $set: { role: role, students: 0 },
+        };
+        const result = await userCollection.updateOne(filter, updateInfo);
+        res.send(result);
+      } else {
+        const updateInfo = {
+          $set: { role: role },
+        };
+        const result = await userCollection.updateOne(filter, updateInfo);
+        res.send(result);
+      }
     });
 
     // classes for home page
@@ -252,7 +260,6 @@ async function run() {
     // select classes : students
     app.post("/classes", verifyJWT, async (req, res) => {
       const info = req.body;
-      console.log(info);
       const result = await selectedClassCollection.insertOne(info);
       res.send(result);
     });
@@ -330,6 +337,14 @@ async function run() {
 
     //get enrolled classes for specific students : students
     app.get("/enrolledClasses/:email", verifyJWT, async (req, res) => {
+      const { email } = req.params;
+      const query = { email: email };
+      const result = await enrolledClassesCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // payment history
+    app.get("/paymentHistory/email", verifyJWT, async (req, res) => {
       const { email } = req.params;
       const query = { email: email };
       const result = await enrolledClassesCollection.find(query).toArray();
