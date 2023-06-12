@@ -286,7 +286,6 @@ async function run() {
       const { id } = req.params;
       const query = { _id: new ObjectId(id) };
       const info = req.body;
-      console.log(info);
       const filterInstructor = { email: info.email };
       const result = await classCollection.updateOne(query, {
         $inc: { enrolledStudents: 1, seats: -1 },
