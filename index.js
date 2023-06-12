@@ -344,7 +344,7 @@ async function run() {
     });
 
     // payment history
-    app.get("/paymentHistory/email", verifyJWT, async (req, res) => {
+    app.get("/paymentHistory/:email", verifyJWT, async (req, res) => {
       const { email } = req.params;
       const query = { email: email };
       const result = await enrolledClassesCollection.find(query).toArray();
