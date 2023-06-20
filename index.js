@@ -251,7 +251,7 @@ async function run() {
 
     // get user specific classes : students
     app.get("/classes/:email", verifyJWT, async (req, res) => {
-      const {email} = req.params;
+      const { email } = req.params;
       const query = { userEmail: email };
       const result = await selectedClassCollection.find(query).toArray();
       res.send(result);
@@ -350,7 +350,10 @@ async function run() {
     app.get("/paymentHistory/:email", verifyJWT, async (req, res) => {
       const { email } = req.params;
       const query = { userEmail: email };
-      const result = await enrolledClassesCollection.find(query).sort({date:-1}).toArray();
+      const result = await enrolledClassesCollection
+        .find(query)
+        .sort({ date: -1 })
+        .toArray();
       res.send(result);
     });
 
@@ -369,6 +372,18 @@ async function run() {
       const query = { role: "instructor" };
       const result = await userCollection.find(query).toArray();
       res.send(result);
+    });
+
+    // get number of classes for  allInstructor page
+    app.get("/instructorClasses/:id", async (req, res) => {
+      const { id } = req.params;
+      const query = { _id: new ObjectId(id) };
+      const instructor = await userCollection.findOne(query);
+      if (instructor) {
+        const filter = { email: instructor.email };
+        const classes = await classCollection.find(filter).toArray();
+        res.send({ result: classes });
+      }
     });
 
     app.get("/studentFeedback", async (req, res) => {
