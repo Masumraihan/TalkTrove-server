@@ -211,6 +211,22 @@ async function run() {
       res.send(result);
     });
 
+    //update user info
+    app.patch("/users/:email",verifyJWT,async(req,res) => {
+      const params = req.params;
+      const {email,name,photo} = req.body;
+      const query = {email:params.email};
+      const updatedInfo = {
+          $set:{
+            email:email,
+            name:name,
+            photo:photo
+          }
+        }
+      const result = await userCollection.updateOne(query,updatedInfo);
+      res.send(result)
+    })
+
     // get update user role : admin
     app.patch("/users/:id", verifyJWT, verifyAdmin, async (req, res) => {
       const { id } = req.params;
