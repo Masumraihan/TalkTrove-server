@@ -179,7 +179,7 @@ async function run() {
       res.send(result);
     });
 
-    //get users
+    //get user
     app.get("/users/:email", async (req, res) => {
       const email = req.params;
       const query = email;
@@ -406,6 +406,14 @@ async function run() {
       const result = await studentFeedbackCollection.find().toArray();
       res.send(result);
     });
+
+    app.get("/dataCount", async(req,res) => {
+      const userCount = await userCollection.estimatedDocumentCount();
+      const classCount = await classCollection.estimatedDocumentCount();
+      const filter = {role:"instructor"}
+      const instructors = await userCollection.find(filter).toArray()
+      res.send({userCount,classCount,instructorsCount:instructors.length})
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
